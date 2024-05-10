@@ -16,15 +16,15 @@ headers = {
 
 
 def time_agg(indf, freq, format_string):
-    agg1 = pd.NamedAgg(column='map_distance', aggfunc='sum')
-    agg2 = pd.NamedAgg(column='duration', aggfunc='sum')
+    agg1 = pd.NamedAgg(column='real_distance_km', aggfunc='sum')
+    agg2 = pd.NamedAgg(column='duration_minutes', aggfunc='sum')
     agg3 = pd.NamedAgg(column='datetime', aggfunc='count')
     res_agg = indf.groupby(pd.Grouper(key="datetime", freq=freq)).agg(
-        distance=agg1, duration=agg2, trips=agg3
+        real_distance_km=agg1, duration_minutes=agg2, trips=agg3
     ).reset_index()
     res_agg.index = res_agg["datetime"].dt.strftime(format_string)
     # we skip slots with zero distance - days/months where we didn't ride
-    res_agg = res_agg[res_agg['distance'] > 0]
+    res_agg = res_agg[res_agg['real_distance_km'] > 0]
     # drop datetime
     res_agg = res_agg.drop(columns=['datetime'])
 
@@ -39,16 +39,16 @@ def get_envvar_or_die(name):
     return value
 
 
-def df_from_list():
+def df_from_list(fn):
 
-    with open("list.json", "r") as f:
+    with open(fn, "r") as f:
         data = json.load(f)
     its = data["account"]["items"]
     rs = [i for i in its if i['node'] == 'rental']
 
     d = dict(
         datetime=[],
-        duration=[],
+        duration_minutes=[],
         sla=[],
         slo=[],
         ela=[],
@@ -70,7 +70,7 @@ def df_from_list():
         d["slo"].append(r["start_place_lng"])
         d["ela"].append(r["end_place_lat"])
         d["elo"].append(r["end_place_lng"])
-
         d["datetime"].append(st)
-        d["duration"].append(duration.total_seconds() / 60)
-    return pd.DataFrame(d)
+        d["duration_minutes"].append(duration.total_seconds() / 60)
+    df = pd.DataFrame(d)
+    return df

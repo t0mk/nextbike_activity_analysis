@@ -1,5 +1,7 @@
 # nextbike login and activity analysis
 
+![My nextbike rides](map.png)
+
 In this repo I show how to log in and get list of rentals from nextbike API. I ride it a lot and wanted to have some statistics.
 
 I took inspiration from other nextbike projects:
@@ -18,8 +20,8 @@ Run as `LOGIN_KEY=sg9032rj32r09rj3 ./get_list.py` and see file `list.json`.
 
 # My results January 2023 - May 2024
 
-- Total aerial distance ridden: 820.23 km, "map" distance ~ 1116 km [0]
-- Total rented bike time: 3 days, 9:34:26
-- Total rentals: 410
+- Total distance travelled:  1022.21 km
+- Total time spent: 75.46 hours
+- Total trips: 402
 
-[0] I measured that my most common ride is 3.01 km aerial and 4.1 km on the map, so I factor by 1.36
+[0] I measured that my most common ride is 3.01 km aerial and 3.8 km on the map, so I factor all measure distances by 1.25
