@@ -2,6 +2,7 @@ import os
 import sys
 import datetime
 import json
+import pandas as pd
 
 api_key = "rXXqTgQZUPZ89lzB"
 
@@ -14,6 +15,22 @@ headers = {
 }
 
 
+def time_agg(indf, freq, format_string):
+    agg1 = pd.NamedAgg(column='map_distance', aggfunc='sum')
+    agg2 = pd.NamedAgg(column='duration', aggfunc='sum')
+    agg3 = pd.NamedAgg(column='datetime', aggfunc='count')
+    res_agg = indf.groupby(pd.Grouper(key="datetime", freq=freq)).agg(
+        distance=agg1, duration=agg2, trips=agg3
+    ).reset_index()
+    res_agg.index = res_agg["datetime"].dt.strftime(format_string)
+    # we skip slots with zero distance - days/months where we didn't ride
+    res_agg = res_agg[res_agg['distance'] > 0]
+    # drop datetime
+    res_agg = res_agg.drop(columns=['datetime'])
+
+    return res_agg
+
+
 def get_envvar_or_die(name):
     value = os.getenv(name)
     if value is None:
@@ -23,21 +40,19 @@ def get_envvar_or_die(name):
 
 
 def df_from_list():
-    import haversine as hs
-    from haversine import Unit
-    import pandas as pd
+
     with open("list.json", "r") as f:
         data = json.load(f)
     its = data["account"]["items"]
     rs = [i for i in its if i['node'] == 'rental']
 
-    totaldist = 0
-    totaltime = None
-
     d = dict(
         datetime=[],
         duration=[],
-        distance=[],
+        sla=[],
+        slo=[],
+        ela=[],
+        elo=[],
     )
 
     for r in rs:
@@ -51,24 +66,11 @@ def df_from_list():
             # we skip short rentals
             continue
 
-        sla = r["start_place_lat"]
-        slo = r["start_place_lng"]
-        ela = r["end_place_lat"]
-        elo = r["end_place_lng"]
+        d["sla"].append(r["start_place_lat"])
+        d["slo"].append(r["start_place_lng"])
+        d["ela"].append(r["end_place_lat"])
+        d["elo"].append(r["end_place_lng"])
 
-        if sla == 0:
-            # we skip rentals with missing start location, that's some bug
-            continue
-        dist = hs.haversine((sla, slo), (ela, elo), unit=Unit.KILOMETERS)
-
-        if totaltime is None:
-            totaltime = duration
-        else:
-            totaltime += duration
-        totaldist += dist
         d["datetime"].append(st)
-        d["duration"].append(duration)
-        d["distance"].append(dist)
-    print(f"Total distance: {totaldist:.2f} km")
-    print(f"Total time: {totaltime}")
+        d["duration"].append(duration.total_seconds() / 60)
     return pd.DataFrame(d)
