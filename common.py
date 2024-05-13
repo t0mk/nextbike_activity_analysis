@@ -3,6 +3,8 @@ import sys
 import datetime
 import json
 import pandas as pd
+import numpy as np
+import random
 
 api_key = "rXXqTgQZUPZ89lzB"
 
@@ -74,3 +76,33 @@ def df_from_list(fn):
         d["duration_minutes"].append(duration.total_seconds() / 60)
     df = pd.DataFrame(d)
     return df
+
+
+def interpolate_arc(lat1, lng1, lat2, lng2, n, height=0.1):
+    # Convert latitude and longitude from degrees to radians
+    lat1, lng1, lat2, lng2 = map(np.radians, [lat1, lng1, lat2, lng2])
+
+    # Compute the midpoint (using average for simplicity)
+    mid_lat = (lat1 + lat2) / 2
+    mid_lng = (lng1 + lng2) / 2
+
+    # Control point height adjustment (simplified calculation)
+    dLat = lat2 - lat1
+    dLng = lng2 - lng1
+    random.seed()
+    factor = random.uniform(.75, 1.25)
+    # Determine height direction based on longitude difference
+    # If lng2 > lng1, the curve should arc upwards/rightwards in typical web map visualization
+    height_direction = np.sign(dLng)
+    ctrl_lat = mid_lat + height_direction * height * dLng * factor
+    ctrl_lng = mid_lng - height_direction * height * dLat * factor
+
+    # Generate points along the Bezier curve
+    t = np.linspace(0, 1, n)
+    curve_lat = (1 - t)**2 * lat1 + 2 * (1 - t) * t * ctrl_lat + t**2 * lat2
+    curve_lng = (1 - t)**2 * lng1 + 2 * (1 - t) * t * ctrl_lng + t**2 * lng2
+
+    # Convert back to degrees
+    curve_lat = np.degrees(curve_lat)
+    curve_lng = np.degrees(curve_lng)
+    return list(zip(curve_lat, curve_lng))
