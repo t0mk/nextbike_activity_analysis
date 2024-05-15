@@ -2,6 +2,8 @@
 
 ![My nextbike rides](map.png)
 
+![When I ride](time.png)
+
 In this repo I show how to log in and get list of rentals from nextbike API. I ride it a lot and wanted to have some statistics.
 
 I took inspiration from other nextbike projects:
